@@ -1,0 +1,1 @@
+docker run --rm -v "$(pwd)/scraped_json:/JSON" mkranj/bajscrape
