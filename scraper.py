@@ -35,16 +35,22 @@ def save_meta(meta, metadata_file):
     with open(metadata_file, "w") as f:
         json.dump(meta, f)
 
-def save_data_json(data, json_file_start):
+def save_data_json(data, json_file_start, target_folder = ""):
     timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 
     filename = json_file_start + "_" + str(timestamp) + ".json"
+
+    if (target_folder != ""):
+        filename = os.path.join(target_folder, filename)
+
+        if not os.path.isdir(target_folder):
+            os.mkdir(target_folder)
 
     with open(filename, "w") as f:
         json.dump(data, f, indent=2)
     print(f"[{datetime.now().isoformat()}] saved data to {filename}")
 
-def polite_fetch(useragent, metadata_file, json_file_start):
+def polite_fetch(useragent, metadata_file, json_file_start, target_folder):
     meta = load_meta(metadata_file)
     headers = {
         "User-Agent": useragent,
@@ -81,7 +87,7 @@ def polite_fetch(useragent, metadata_file, json_file_start):
             except ValueError:
                 print("Received non-JSON response")
                 return False
-            save_data_json(data, json_file_start)
+            save_data_json(data, json_file_start, target_folder)
 
             # save ETag / Last-Modified if present
             meta = {}
@@ -141,7 +147,7 @@ if __name__ == "__main__":
     print(f"Startup jitter {STARTUP_JITTER:.1f}s")
     time.sleep(STARTUP_JITTER)
 
-    success = polite_fetch(USER_AGENT, META_FILE, JSON_FILENAME_START)
+    success = polite_fetch(USER_AGENT, META_FILE, JSON_FILENAME_START, FOLDER_TO_SAVE)
     if success:
         print("Fetch finished successfully")
     else:
