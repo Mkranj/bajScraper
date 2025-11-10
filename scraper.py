@@ -7,7 +7,7 @@ import os
 from datetime import datetime, timezone
 
 URL = "https://maps.nextbike.net/maps/nextbike-live.json?city=1172&domains=hd&list_cities=0&bikes=0"   # change to the JSON URL
-CACHE_FILE = "data_cache.json"
+JSON_FILENAME_START = "bajs"
 META_FILE = "data_meta.json"
 USER_AGENT = "BajScraper/1.0"
 
@@ -35,12 +35,16 @@ def save_meta(meta, metadata_file):
     with open(metadata_file, "w") as f:
         json.dump(meta, f)
 
-def save_data_json(data, cache_filepath):
-    with open(cache_filepath, "w") as f:
-        json.dump(data, f, indent=2)
-    print(f"[{datetime.now().isoformat()}] saved data to {cache_filepath}")
+def save_data_json(data, json_file_start):
+    timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 
-def polite_fetch(useragent, metadata_file, cache_filepath):
+    filename = json_file_start + "_" + str(timestamp) + ".json"
+
+    with open(filename, "w") as f:
+        json.dump(data, f, indent=2)
+    print(f"[{datetime.now().isoformat()}] saved data to {filename}")
+
+def polite_fetch(useragent, metadata_file, json_file_start):
     meta = load_meta(metadata_file)
     headers = {
         "User-Agent": useragent,
@@ -77,7 +81,7 @@ def polite_fetch(useragent, metadata_file, cache_filepath):
             except ValueError:
                 print("Received non-JSON response")
                 return False
-            save_data_json(data, cache_filepath)
+            save_data_json(data, json_file_start)
 
             # save ETag / Last-Modified if present
             meta = {}
@@ -137,7 +141,7 @@ if __name__ == "__main__":
     print(f"Startup jitter {STARTUP_JITTER:.1f}s")
     time.sleep(STARTUP_JITTER)
 
-    success = polite_fetch(USER_AGENT, META_FILE, CACHE_FILE)
+    success = polite_fetch(USER_AGENT, META_FILE, JSON_FILENAME_START)
     if success:
         print("Fetch finished successfully")
     else:
