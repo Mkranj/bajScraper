@@ -19,28 +19,28 @@ MAX_RETRIES = 5
 BASE_BACKOFF = 2.0  # seconds
 MAX_BACKOFF = 300.0  # max backoff
 
-def load_meta():
-    if os.path.exists(META_FILE):
+def load_meta(metadata_file):
+    if os.path.exists(metadata_file):
         try:
-            with open(META_FILE, "r") as f:
+            with open(metadata_file, "r") as f:
                 return json.load(f)
         except:
             return {}
     return {}
 
-def save_meta(meta):
-    with open(META_FILE, "w") as f:
+def save_meta(meta, metadata_file):
+    with open(metadata_file, "w") as f:
         json.dump(meta, f)
 
-def save_data_json(data):
-    with open(CACHE_FILE, "w") as f:
+def save_data_json(data, cache_filepath):
+    with open(cache_filepath, "w") as f:
         json.dump(data, f, indent=2)
-    print(f"[{datetime.now().isoformat()}] saved data to {CACHE_FILE}")
+    print(f"[{datetime.now().isoformat()}] saved data to {cache_filepath}")
 
-def polite_fetch():
-    meta = load_meta()
+def polite_fetch(useragent, metadata_file):
+    meta = load_meta(metadata_file)
     headers = {
-        "User-Agent": USER_AGENT,
+        "User-Agent": useragent,
         "Accept": "application/json",
         "Accept-Encoding": "gzip, deflate",
         # conditional headers if previously saved
@@ -84,7 +84,7 @@ def polite_fetch():
                 meta["last_modified"] = resp.headers["Last-Modified"]
             # also store timestamp
             meta["fetched_at"] = datetime.now(timezone.utc).isoformat()
-            save_meta(meta)
+            save_meta(meta, metadata_file)
             return True
 
         elif resp.status_code == 304:
@@ -92,7 +92,7 @@ def polite_fetch():
             print(f"[{datetime.now().isoformat()}] 304 Not Modified; no update")
             # update fetched_at timestamp
             meta["fetched_at"] = datetime.now(timezone.utc).isoformat()
-            save_meta(meta)
+            save_meta(meta, metadata_file)
             return True
 
         elif resp.status_code == 429:
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     print(f"Startup jitter {STARTUP_JITTER:.1f}s")
     time.sleep(STARTUP_JITTER)
 
-    success = polite_fetch()
+    success = polite_fetch(USER_AGENT, META_FILE)
     if success:
         print("Fetch finished successfully")
     else:
