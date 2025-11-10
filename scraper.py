@@ -50,7 +50,7 @@ def save_data_json(data, json_file_start, target_folder = ""):
         json.dump(data, f, indent=2)
     print(f"[{datetime.now().isoformat()}] saved data to {filename}")
 
-def polite_fetch(useragent, metadata_file, json_file_start, target_folder):
+def fetch_data(useragent, metadata_file, json_file_start, target_folder):
     meta = load_meta(metadata_file)
     headers = {
         "User-Agent": useragent,
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     print(f"Startup jitter {STARTUP_JITTER:.1f}s")
     time.sleep(STARTUP_JITTER)
 
-    success = polite_fetch(USER_AGENT, META_FILE, JSON_FILENAME_START, FOLDER_TO_SAVE)
+    success = fetch_data(USER_AGENT, META_FILE, JSON_FILENAME_START, FOLDER_TO_SAVE)
     if success:
         print("Fetch finished successfully")
     else:
