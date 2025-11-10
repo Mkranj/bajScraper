@@ -5,13 +5,16 @@ import json
 import random
 import os
 from datetime import datetime, timezone
+import argparse
 
-URL = "https://maps.nextbike.net/maps/nextbike-live.json?city=1172&domains=hd&list_cities=0&bikes=0"   # change to the JSON URL
-JSON_FILENAME_START = "bajs"
-META_FILE = "data_meta.json"
-USER_AGENT = "BajScraper/1.0"
-
+# Default values if no arguments provided:
+URL = "https://maps.nextbike.net/maps/nextbike-live.json?city=1172&domains=hd&list_cities=0&bikes=0"
 FOLDER_TO_SAVE = "json"
+META_FILE = "data_meta.json"
+
+USER_AGENT = "BajScraper/1.0"
+JSON_FILENAME_START = "bajs"
+
 
 # Maximum seconds to offset hourly retrieval
 # TODO increase, currently low for testing
@@ -50,7 +53,7 @@ def save_data_json(data, json_file_start, target_folder = ""):
         json.dump(data, f, indent=2)
     print(f"[{datetime.now().isoformat()}] saved data to {filename}")
 
-def fetch_data(useragent, metadata_file, json_file_start, target_folder):
+def fetch_data(url, useragent, metadata_file, json_file_start, target_folder):
     meta = load_meta(metadata_file)
     headers = {
         "User-Agent": useragent,
@@ -69,7 +72,7 @@ def fetch_data(useragent, metadata_file, json_file_start, target_folder):
     attempt = 0
     while attempt <= MAX_RETRIES:
         try:
-            resp = session.get(URL, timeout=30)
+            resp = session.get(url, timeout=30)
         except requests.RequestException as e:
             # network error -> backoff and retry
             attempt += 1
@@ -142,12 +145,36 @@ def fetch_data(useragent, metadata_file, json_file_start, target_folder):
     return False
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser("bajScrape")
+
+    parser.add_argument("-u", "--url", help = "URL target to scrape.")
+    parser.add_argument("-j", "--json_folder", help = "Folder in which to save recieved JSON files.")
+    parser.add_argument("-m", "--meta_file", help = "JSON file to store metadata.")
+    
+    args = parser.parse_args()
+    print(args)
+
+    if args.url is not None:
+        target_url = args.url
+    else:
+        target_url = URL
+
+    if args.meta_file is not None:
+        meta = args.meta_file
+    else:
+        meta = META_FILE
+
+    if args.json_folder is not None:
+        json_folder = args.json_folder
+    else:
+        json_folder = FOLDER_TO_SAVE
+
     # Add a small startup jitter if you run this hourly across many machines
     STARTUP_JITTER = random.uniform(0, MAX_JITTER)
     print(f"Startup jitter {STARTUP_JITTER:.1f}s")
     time.sleep(STARTUP_JITTER)
 
-    success = fetch_data(USER_AGENT, META_FILE, JSON_FILENAME_START, FOLDER_TO_SAVE)
+    success = fetch_data(target_url, USER_AGENT, meta, JSON_FILENAME_START, json_folder)
     if success:
         print("Fetch finished successfully")
     else:
