@@ -6,13 +6,16 @@ import random
 import os
 from datetime import datetime, timezone
 
-URL = "https://example.com/data.json"   # change to the JSON URL
+URL = "https://maps.nextbike.net/maps/nextbike-live.json?city=1172&domains=hd&list_cities=0&bikes=0"   # change to the JSON URL
 CACHE_FILE = "data_cache.json"
 META_FILE = "data_meta.json"
-USER_AGENT = "MyNiceScraper/1.0 (+https://example.com/contact; email:me@example.com)"
+USER_AGENT = "BajScraper/1.0"
+
+FOLDER_TO_SAVE = "json"
 
 # Maximum seconds to offset hourly retrieval
-MAX_JITTER = 180
+# TODO increase, currently low for testing
+MAX_JITTER = 1
 
 # Backoff parameters
 MAX_RETRIES = 5
@@ -24,7 +27,7 @@ def load_meta(metadata_file):
         try:
             with open(metadata_file, "r") as f:
                 return json.load(f)
-        except:
+        except BaseException:
             return {}
     return {}
 
@@ -37,7 +40,7 @@ def save_data_json(data, cache_filepath):
         json.dump(data, f, indent=2)
     print(f"[{datetime.now().isoformat()}] saved data to {cache_filepath}")
 
-def polite_fetch(useragent, metadata_file):
+def polite_fetch(useragent, metadata_file, cache_filepath):
     meta = load_meta(metadata_file)
     headers = {
         "User-Agent": useragent,
@@ -74,7 +77,7 @@ def polite_fetch(useragent, metadata_file):
             except ValueError:
                 print("Received non-JSON response")
                 return False
-            save_data_json(data)
+            save_data_json(data, cache_filepath)
 
             # save ETag / Last-Modified if present
             meta = {}
@@ -134,7 +137,7 @@ if __name__ == "__main__":
     print(f"Startup jitter {STARTUP_JITTER:.1f}s")
     time.sleep(STARTUP_JITTER)
 
-    success = polite_fetch(USER_AGENT, META_FILE)
+    success = polite_fetch(USER_AGENT, META_FILE, CACHE_FILE)
     if success:
         print("Fetch finished successfully")
     else:
