@@ -7,17 +7,11 @@ import os
 from datetime import datetime, timezone
 import argparse
 
-# Default values if no arguments provided:
-URL = "https://maps.nextbike.net/maps/nextbike-live.json?city=1172&domains=hd&list_cities=0&bikes=0"
-FOLDER_TO_SAVE = "json"
-META_FILE = "data_meta.json"
+# Default value if no arguments provided:
+DEFAULT_URL = "https://maps.nextbike.net/maps/nextbike-live.json?city=1172&domains=hd&list_cities=0&bikes=0"
 
 USER_AGENT = "BajScraper/1.0"
 JSON_FILENAME_START = "bajs"
-
-
-# Maximum seconds to offset hourly retrieval
-MAX_JITTER = 1800
 
 # Backoff parameters
 MAX_RETRIES = 5
@@ -146,39 +140,27 @@ def fetch_data(url, useragent, metadata_file, json_file_start, target_folder):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("bajScrape")
 
-    parser.add_argument("-u", "--url", help = "URL target to scrape.")
-    parser.add_argument("-j", "--json_folder", help = "Folder in which to save recieved JSON files.")
-    parser.add_argument("-m", "--meta_file", help = "JSON file to store metadata.")
-    parser.add_argument("--max_jitter", help = "Maximum number of seconds to offset fetching.")
+    parser.add_argument("-u", "--url", help = "URL target to scrape.", type = str,
+        nargs = "?", default = DEFAULT_URL)
+    parser.add_argument("-j", "--json_folder", help = "Folder in which to save recieved JSON files.", type = str,
+        nargs = "?", default = "JSON")
+    parser.add_argument("-m", "--meta_file", help = "JSON file to store metadata.", type = str,
+        nargs = "?", default = "metadata.json")
+    parser.add_argument("-mj", "--max_jitter", help = "Maximum number of seconds to offset fetching.", type = int,
+        nargs = "?", default = 1800)
     
     args = parser.parse_args()
 
-    if args.url is not None:
-        target_url = args.url
-    else:
-        target_url = URL
-
-    if args.meta_file is not None:
-        meta = args.meta_file
-    else:
-        meta = META_FILE
-
-    if args.json_folder is not None:
-        json_folder = args.json_folder
-    else:
-        json_folder = FOLDER_TO_SAVE
-        
-    if args.max_jitter is not None:
-        jitter_m = int(args.max_jitter)
-    else:
-        jitter_m = MAX_JITTER
-
     # Add a small startup jitter if you run this hourly across many machines
-    STARTUP_JITTER = random.uniform(0, jitter_m)
+    STARTUP_JITTER = random.uniform(0, args.max_jitter)
     print(f"Startup jitter {STARTUP_JITTER:.1f}s")
     time.sleep(STARTUP_JITTER)
 
-    success = fetch_data(target_url, USER_AGENT, meta, JSON_FILENAME_START, json_folder)
+    success = fetch_data(args.url, 
+        USER_AGENT, 
+        args.meta_file, 
+        JSON_FILENAME_START, 
+        args.json_folder)
     if success:
         print("Fetch finished successfully")
     else:
