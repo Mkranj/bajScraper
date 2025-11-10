@@ -17,8 +17,7 @@ JSON_FILENAME_START = "bajs"
 
 
 # Maximum seconds to offset hourly retrieval
-# TODO increase, currently low for testing
-MAX_JITTER = 1
+MAX_JITTER = 1800
 
 # Backoff parameters
 MAX_RETRIES = 5
@@ -150,9 +149,9 @@ if __name__ == "__main__":
     parser.add_argument("-u", "--url", help = "URL target to scrape.")
     parser.add_argument("-j", "--json_folder", help = "Folder in which to save recieved JSON files.")
     parser.add_argument("-m", "--meta_file", help = "JSON file to store metadata.")
+    parser.add_argument("--max_jitter", help = "Maximum number of seconds to offset fetching.")
     
     args = parser.parse_args()
-    print(args)
 
     if args.url is not None:
         target_url = args.url
@@ -168,9 +167,14 @@ if __name__ == "__main__":
         json_folder = args.json_folder
     else:
         json_folder = FOLDER_TO_SAVE
+        
+    if args.max_jitter is not None:
+        jitter_m = int(args.max_jitter)
+    else:
+        jitter_m = MAX_JITTER
 
     # Add a small startup jitter if you run this hourly across many machines
-    STARTUP_JITTER = random.uniform(0, MAX_JITTER)
+    STARTUP_JITTER = random.uniform(0, jitter_m)
     print(f"Startup jitter {STARTUP_JITTER:.1f}s")
     time.sleep(STARTUP_JITTER)
 
